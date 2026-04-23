@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoltGuard – Sensor Panel</title>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --panel: #0f1628;
+    --border: #1e2d50;
+    --safe: #00e5a0;
+    --danger: #ff3c3c;
+    --warn: #ffaa00;
+    --text: #c8d8f0;
+    --dim: #4a5f80;
+    --accent: #1a9fff; 
+    --glow-safe: 0 0 18px #00e5a060;
+    --glow-danger: 0 0 18px #ff3c3c70;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px 16px 40px;
+    background-image:
+      radial-gradient(ellipse 80% 40% at 50% -10%, #0d2a5040 0%, transparent 70%),
+      repeating-linear-gradient(0deg, transparent, transparent 39px, #1e2d5018 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, #1e2d5018 40px);
+  }
+
+  /* ── Header ── */
+  .header {
+    text-align: center;
+    margin-bottom: 32px;
+    position: relative;
+  }
+  .header::after {
+    content: '';
+    display: block;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    margin-top: 20px;
+  }
+  .logo-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 6px;
+  }
+  .bolt-icon {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, #ffaa00, #ff6600);
+    clip-path: polygon(60% 0%, 100% 0%, 40% 50%, 80% 50%, 0% 100%, 30% 55%, 0% 55%);
+    filter: drop-shadow(0 0 10px #ffaa0080);
+    animation: pulse-bolt 2.5s ease-in-out infinite;
+  }
+  @keyframes pulse-bolt {
+    0%,100% { filter: drop-shadow(0 0 8px #ffaa0060); }
+    50%      { filter: drop-shadow(0 0 18px #ffaa00cc); }
+  }
+  .header h1 {
+    font-size: 2rem;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: linear-gradient(90deg, #fff 30%, #1a9fff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .header .subtitle {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--dim);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+  .header .live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #0a1e0e;
+    border: 1px solid #00e5a030;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    color: var(--safe);
+    margin-top: 10px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+  .live-dot {
+    width: 7px; height: 7px;
+    background: var(--safe);
+    border-radius: 50%;
+    animation: blink 1.2s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+
+  /* ── Grid ── */
+  .sensor-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    max-width: 1000px;
+    margin: 0 auto 28px;
+  }
+
+  /* ── Sensor Card ── */
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px 22px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color .3s, box-shadow .3s;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--safe);
+    border-radius: 14px 14px 0 0;
+    transition: background .3s;
+  }
+  .card.leaking { border-color: #ff3c3c50; box-shadow: var(--glow-danger); }
+  .card.leaking::before { background: var(--danger); }
+  .card.leaking { animation: shake .4s ease; }
+  @keyframes shake {
+    0%,100%{transform:translateX(0)}
+    20%{transform:translateX(-5px)}
+    40%{transform:translateX(5px)}
+    60%{transform:translateX(-3px)}
+    80%{transform:translateX(3px)}
+  }
+
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+
+  .area-icon {
+    width: 38px; height: 38px;
+    background: #151f38;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+  }
+  .card-title { font-size: 1.05rem; font-weight: 700; letter-spacing: .5px; margin-top: 2px; }
+  .card-id {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--dim);
+    letter-spacing: 1px;
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-family: 'Share Tech Mono', monospace;
+    transition: all .3s;
+  }
+  .status-pill.safe {
+    background: #001a10;
+    border: 1px solid #00e5a040;
+    color: var(--safe);
+  }
+  .status-pill.danger {
+    background: #1a0000;
+    border: 1px solid #ff3c3c60;
+    color: var(--danger);
+    animation: danger-pulse .8s ease-in-out infinite;
+  }
+  @keyframes danger-pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+
+  /* ── Readings bar ── */
+  .readings {
+    display: flex;
+    gap: 10px;
+    margin: 14px 0 18px;
+  }
+  .reading-box {
+    flex: 1;
+    background: #070d1c;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 10px 8px;
+    text-align: center;
+  }
+  .reading-val {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #fff;
+    transition: color .3s;
+  }
+  .card.leaking .reading-val { color: var(--danger); }
+  .reading-label { font-size: 0.6rem; color: var(--dim); letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
+
+  /* ── Buttons ── */
+  .btn-row { display: flex; gap: 10px; }
+
+  .btn {
+    flex: 1;
+    padding: 11px 8px;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Barlow', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all .15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn:active { transform: scale(.96); }
+
+  .btn-trigger {
+    background: linear-gradient(135deg, #b00000, #ff3c3c);
+    color: #fff;
+    box-shadow: 0 4px 16px #ff3c3c30;
+  }
+  .btn-trigger:hover { box-shadow: 0 4px 24px #ff3c3c60; filter: brightness(1.1); }
+
+  .btn-reset {
+    background: #151f38;
+    border: 1px solid var(--border);
+    color: var(--dim);
+  }
+  .btn-reset:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-reset:disabled { opacity: .35; cursor: not-allowed; }
+
+  /* ── Log ── */
+  .log-section {
+    max-width: 1000px;
+    margin: 0 auto 24px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .log-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    background: #0a1220;
+  }
+  .log-header span {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .log-clear {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--dim);
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: 'Share Tech Mono', monospace;
+    transition: all .2s;
+  }
+  .log-clear:hover { border-color: var(--accent); color: var(--accent); }
+  .log-body {
+    padding: 12px 20px 14px;
+    min-height: 90px;
+    max-height: 160px;
+    overflow-y: auto;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.72rem;
+  }
+  .log-body::-webkit-scrollbar { width: 4px; }
+  .log-body::-webkit-scrollbar-track { background: transparent; }
+  .log-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  .log-entry {
+    display: flex;
+    gap: 14px;
+    padding: 5px 0;
+    border-bottom: 1px solid #0d1628;
+    animation: fadeIn .3s ease;
+  }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:none} }
+  .log-time { color: var(--dim); min-width: 60px; }
+  .log-msg.leak { color: var(--danger); }
+  .log-msg.reset { color: var(--safe); }
+  .log-msg.signal { color: var(--warn); }
+
+  /* ── Transmission bar ── */
+  .tx-bar {
+    max-width: 1000px;
+    margin: 0 auto;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--dim);
+  }
+  .tx-bar .tx-label { color: var(--accent); letter-spacing: 1px; text-transform: uppercase; white-space: nowrap; }
+  .tx-val { color: var(--text); }
+  .tx-arrow {
+    color: var(--warn);
+    animation: arrow-blink 1s steps(1) infinite;
+  }
+  @keyframes arrow-blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  /* ip note */
+  .ip-note {
+    max-width: 1000px;
+    margin: 16px auto 0;
+    background: #0c1830;
+    border: 1px dashed #1e3060;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.72rem;
+    color: #4a6090;
+    text-align: center;
+  }
+  .ip-note span { color: var(--warn); }
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<div class="header">
+  <div class="logo-row">
+    <div class="bolt-icon"></div>
+    <h1>VoltGuard</h1>
+  </div>
+  <div class="subtitle">IoT Sensor Simulation Panel · Smart Campus Grid</div>
+  <div class="live-badge"><span class="live-dot"></span> SENSORS ONLINE</div>
+</div>
+
+<!-- ── Sensor Cards ── -->
+<div class="sensor-grid" id="sensorGrid">
+
+  <div class="card" id="card-lab">
+    <div class="card-header">
+      <div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="area-icon">🔬</div>
+          <div>
+            <div class="card-title">Lab Block</div>
+            <div class="card-id">NODE-001 · SECTOR-A</div>
+          </div>
+        </div>
+      </div>
+      <div class="status-pill safe" id="pill-lab">
+        <span class="live-dot"></span> SAFE
+      </div>
+    </div>
+    <div class="readings">
+      <div class="reading-box"><div class="reading-val" id="cur-lab">0.4A</div><div class="reading-label">Current</div></div>
+      <div class="reading-box"><div class="reading-val" id="vol-lab">230V</div><div class="reading-label">Voltage</div></div>
+      <div class="reading-box"><div class="reading-val" id="lkg-lab">0.0mA</div><div class="reading-label">Leakage</div></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-trigger" onclick="sendLeak('lab')">⚡ Trigger Leakage</button>
+      <button class="btn btn-reset" id="reset-lab" onclick="resetSensor('lab')" disabled>↺ Reset</button>
+    </div>
+  </div>
+
+  <div class="card" id="card-classroom">
+    <div class="card-header">
+      <div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="area-icon">🏫</div>
+          <div>
+            <div class="card-title">Classroom Block</div>
+            <div class="card-id">NODE-002 · SECTOR-B</div>
+          </div>
+        </div>
+      </div>
+      <div class="status-pill safe" id="pill-classroom">
+        <span class="live-dot"></span> SAFE
+      </div>
+    </div>
+    <div class="readings">
+      <div class="reading-box"><div class="reading-val" id="cur-classroom">0.6A</div><div class="reading-label">Current</div></div>
+      <div class="reading-box"><div class="reading-val" id="vol-classroom">231V</div><div class="reading-label">Voltage</div></div>
+      <div class="reading-box"><div class="reading-val" id="lkg-classroom">0.0mA</div><div class="reading-label">Leakage</div></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-trigger" onclick="sendLeak('classroom')">⚡ Trigger Leakage</button>
+      <button class="btn btn-reset" id="reset-classroom" onclick="resetSensor('classroom')" disabled>↺ Reset</button>
+    </div>
+  </div>
+
+  <div class="card" id="card-canteen">
+    <div class="card-header">
+      <div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="area-icon">🍽️</div>
+          <div>
+            <div class="card-title">Canteen</div>
+            <div class="card-id">NODE-003 · SECTOR-C</div>
+          </div>
+        </div>
+      </div>
+      <div class="status-pill safe" id="pill-canteen">
+        <span class="live-dot"></span> SAFE
+      </div>
+    </div>
+    <div class="readings">
+      <div class="reading-box"><div class="reading-val" id="cur-canteen">0.8A</div><div class="reading-label">Current</div></div>
+      <div class="reading-box"><div class="reading-val" id="vol-canteen">229V</div><div class="reading-label">Voltage</div></div>
+      <div class="reading-box"><div class="reading-val" id="lkg-canteen">0.0mA</div><div class="reading-label">Leakage</div></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-trigger" onclick="sendLeak('canteen')">⚡ Trigger Leakage</button>
+      <button class="btn btn-reset" id="reset-canteen" onclick="resetSensor('canteen')" disabled>↺ Reset</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Log ── -->
+<div class="log-section">
+  <div class="log-header">
+    <span>📋 Sensor Activity Log</span>
+    <button class="log-clear" onclick="clearLog()">Clear</button>
+  </div>
+  <div class="log-body" id="logBody">
+    <div class="log-entry"><span class="log-time" id="initTime">--:--:--</span><span class="log-msg">System initialised. All sensors nominal.</span></div>
+  </div>
+</div>
+
+<!-- ── Transmission bar ── -->
+<div class="tx-bar">
+  <span class="tx-label">Last Signal</span>
+  <span class="tx-val" id="txVal">— Awaiting trigger —</span>
+  <span class="tx-arrow" id="txArrow" style="display:none">▶▶▶</span>
+  <span class="tx-val" id="txDest" style="display:none">Monitoring Server</span>
+</div>
+
+<div class="ip-note">
+  Configure server IP:&nbsp;
+  <span id="ipDisplay">10.231.6.158/</span>
+  &nbsp;·&nbsp;
+  <input id="ipInput" placeholder="e.g. 192.168.1.15" style="background:#0a1220;border:1px solid #1e3060;color:#c8d8f0;border-radius:4px;padding:3px 8px;font-family:inherit;font-size:inherit;width:160px;" oninput="updateIP(this.value)">
+</div>
+
+<script>
+  let serverIP = '10.231.6.158';
+
+  function updateIP(val) {
+    serverIP = val || '10.231.6.158';
+    document.getElementById('ipDisplay').textContent = `http://${serverIP}:3000`;
+  }
+
+  function now() {
+    return new Date().toLocaleTimeString('en-GB', {hour12:false});
+  }
+
+  document.getElementById('initTime').textContent = now();
+
+  function addLog(msg, type='') {
+    const log = document.getElementById('logBody');
+    const div = document.createElement('div');
+    div.className = 'log-entry';
+    div.innerHTML = `<span class="log-time">${now()}</span><span class="log-msg ${type}">${msg}</span>`;
+    log.prepend(div);
+  }
+
+  function clearLog() {
+    document.getElementById('logBody').innerHTML = '';
+    addLog('Log cleared.');
+  }
+
+  const leakReadings = { lab:{cur:'12.4A',vol:'198V',lkg:'85.3mA'}, classroom:{cur:'9.8A',vol:'204V',lkg:'62.1mA'}, canteen:{cur:'15.2A',vol:'191V',lkg:'110.7mA'} };
+  const safeReadings = { lab:{cur:'0.4A',vol:'230V',lkg:'0.0mA'}, classroom:{cur:'0.6A',vol:'231V',lkg:'0.0mA'}, canteen:{cur:'0.8A',vol:'229V',lkg:'0.0mA'} };
+
+  function sendLeak(place) {
+    const names = {lab:'Lab Block', classroom:'Classroom Block', canteen:'Canteen'};
+    const name = names[place];
+
+    // Update card
+    document.getElementById('card-'+place).classList.add('leaking');
+    const pill = document.getElementById('pill-'+place);
+    pill.className = 'status-pill danger';
+    pill.innerHTML = `<span class="live-dot"></span> LEAK DETECTED`;
+
+    // Update readings
+    const r = leakReadings[place];
+    document.getElementById('cur-'+place).textContent = r.cur;
+    document.getElementById('vol-'+place).textContent = r.vol;
+    document.getElementById('lkg-'+place).textContent = r.lkg;
+
+    // Enable reset
+    document.getElementById('reset-'+place).disabled = false;
+
+    // Transmission bar
+    document.getElementById('txVal').textContent = name + ' → ';
+    document.getElementById('txArrow').style.display = 'inline';
+    document.getElementById('txDest').style.display = 'inline';
+
+    // Log
+    addLog(`⚡ LEAKAGE TRIGGERED — ${name}`, 'leak');
+    addLog(`📡 Signal sent to monitoring server (${serverIP}:3000)`, 'signal');
+
+    // Send fetch
+    fetch(`http://${serverIP}:3000/leak/${place}`)
+      .then(() => addLog(`✅ Server acknowledged signal — ${name}`, 'reset'))
+      .catch(() => addLog(`⚠ Server not reachable — demo mode active`, ''));
+  }
+
+  function resetSensor(place) {
+    const names = {lab:'Lab Block', classroom:'Classroom Block', canteen:'Canteen'};
+    const name = names[place];
+
+    document.getElementById('card-'+place).classList.remove('leaking');
+    const pill = document.getElementById('pill-'+place);
+    pill.className = 'status-pill safe';
+    pill.innerHTML = `<span class="live-dot"></span> SAFE`;
+
+    const r = safeReadings[place];
+    document.getElementById('cur-'+place).textContent = r.cur;
+    document.getElementById('vol-'+place).textContent = r.vol;
+    document.getElementById('lkg-'+place).textContent = r.lkg;
+
+    document.getElementById('reset-'+place).disabled = true;
+
+    addLog(`✅ Sensor reset — ${name} restored to SAFE`, 'reset');
+
+    fetch(`http://${serverIP}:3000/reset/${place}`)
+      .catch(() => {});
+  }
+</script>
+</body>
+</html>

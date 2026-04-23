@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>VoltGuard Sensor Panel</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#0f172a;
+color:white;
+text-align:center;
+}
+
+button{
+padding:15px;
+margin:15px;
+font-size:16px;
+background:red;
+color:white;
+border:none;
+border-radius:8px;
+cursor:pointer;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>VoltGuard Sensor Panel</h1>
+
+<p>Simulated IoT Electrical Sensors</p>
+
+<button onclick="sendLeak('lab')">
+Trigger Lab Leakage
+</button>
+
+<button onclick="sendLeak('classroom')">
+Trigger Classroom Leakage
+</button>
+
+<button onclick="sendLeak('canteen')">
+Trigger Canteen Leakage
+</button>
+
+<script>
+
+function sendLeak(place){
+
+fetch("http://10.231.6.158:3000/leak/"+place)
+
+}
+
+</script>
+
+</body>
+
+</html>s
